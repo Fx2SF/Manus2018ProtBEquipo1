@@ -22,9 +22,39 @@ namespace ManusE1
             InitializeComponent();
         }
 
+            //Botón examina carpeta que contiene lote de cheques
+            private void openButton_Click(object sender, EventArgs e) {
+            // Consigo path de imagen 
+            fotoStream = null;
+            openFileDialog1.InitialDirectory = "c:\\";
+            openFileDialog1.Filter = "Archivos jpg (*.jpg)|*.jpg*|Todos los archivos (*.*)|*.*";
+            openFileDialog1.FilterIndex = 2;
+            openFileDialog1.RestoreDirectory = true;
+
+            if (openFileDialog1.ShowDialog() == DialogResult.OK) {
+                fotoStream = openFileDialog1.OpenFile();
+                fotoPath = openFileDialog1.FileName;
+                directory = Path.GetDirectoryName(fotoPath);
+            }
+            textBox1.Text = ("Cargando imagen...");
+            //improveImage(fotoStream, directory);
+            textBox1.Text = ("Imagen cargada. Listo para procesar.");
+            processButton.Enabled = true;
+        }
+
+            //Botón procesa lote
             private void processButton_Click(object sender, EventArgs e) {
                 textBox1.Text = "Procesando...";
 
+                
+
+                textBox1.Text = "Se creó un txt con el resultado.";
+                processButton.Enabled = false;
+                
+            }
+            
+
+            public void processSingleCheck(string img) {
                 //Creo archivo txt 
                 CreateTXT(directory);
 
@@ -33,32 +63,33 @@ namespace ManusE1
                 Rectangle z2 = new Rectangle(3, 3, 3, 3);
                 Rectangle z3 = new Rectangle(3, 3, 3, 3);
                 Rectangle[] cropZones = new Rectangle[] { z1, z2, z3 };
+                //Proceso cada recorte de imagen original 
                 foreach (Rectangle z in cropZones) {
-                    //crop this zone in image, create tiff file with it n process it
-                }
+                    //Hago recorte para procesar
+                    var imageFactory = new ImageFactory(false);
+                    var croppedImg = imageFactory.Load(fotoPath);
+                    croppedImg.Crop(z);
+                    //Guardo archivo con recorte
+                    croppedImg.Save(string.Concat(directory, "\\ManusE1_temporal\\current_crop.tiff"));
+                    //Libero memoria de objeto croppedImg, para crear otro en próxima iteración
+                    croppedImg.Dispose();
 
-                textBox1.Text = "Se creó un txt con el resultado.";
-                processButton.Enabled = false;
-                
+                    //Proceso recorte
+                    processSingleCrop("\\ManusE1_temporal\\current_crop.tiff");
+
+                    //Elimino archivo de recorte creado luego de haberlo procesado
+                    File.Delete(string.Concat(directory, "\\ManusE1_temporal\\current_crop.tiff"));
+                }
             }
 
-            private void openButton_Click(object sender, EventArgs e) {
-                // Consigo path de imagen 
-                fotoStream = null;
-                openFileDialog1.InitialDirectory = "c:\\" ;
-                openFileDialog1.Filter = "Archivos jpg (*.jpg)|*.jpg*|Todos los archivos (*.*)|*.*" ;
-                openFileDialog1.FilterIndex = 2 ;
-                openFileDialog1.RestoreDirectory = true ;
+            public void processSingleCrop(string img) {
+                //Pido a la API Vision
+                var image = Google.Cloud.Vision.V1.Image.FromFile(img);
+                var response = client.DetectText(image);
 
-                if(openFileDialog1.ShowDialog() == DialogResult.OK) {
-                    fotoStream = openFileDialog1.OpenFile();
-                    fotoPath = openFileDialog1.FileName;
-                    directory = Path.GetDirectoryName(fotoPath);
-                }
-                textBox1.Text = ("Cargando imagen...");
-                //improveImage(fotoStream, directory);
-                textBox1.Text = ("Imagen cargada. Listo para procesar.");
-                processButton.Enabled = true;
+                //Escribo lo devuelto por Vision 
+                text = response.ElementAt(0).Description;
+                AppendText2File(directory, text);
             }
 
             public void CreateTXT(string directory) {
@@ -70,11 +101,18 @@ namespace ManusE1
                 file.Dispose(); //Elimino el objeto para que writeTXT pueda usar el archivo creado sin que este proceso lo tenga abierto.
             }
 
-            public void writeTXT(string txtFilePath, string text) {
+            public void AppendText2File(string txtFilePath, string text) {
                 StreamWriter file = new StreamWriter(txtFilePath);
-                file.Write(text);
+                File.AppendAllText(txtFilePath, text + Environment.NewLine);
+                //file.Write(text); 
                 file.Dispose();
             }
+         
+
+
+
+
+
 
             public void improveImage(Stream img, string directory) {
                 var imageFactory = new ImageFactory(false);
@@ -86,22 +124,6 @@ namespace ManusE1
 
                 //Guardo imagen mejorada
                 improvedImg.Save(string.Concat(directory, "\\improvedImg.jpg"));
-            }
-
-            public void cropAndProcessImage(string img) {
-
-            }
-
-            public void processSingleCrop() {
-                //Pido a la API Vision
-                var image = Image.FromFile(fotoPath);
-                var response = client.DetectText(image);
-                
-                //Escribo lo devuelto por Vision 
-                text = response.ElementAt(0).Description;
-                writeTXT(txtPath, text);
-                //Elimino imagen creada por improveImage en directorio
-                File.Delete(string.Concat(directory, "\\improvedImg.jpg"));
             }
 
         }
