@@ -30,18 +30,18 @@
         {
             this.openButton = new System.Windows.Forms.Button();
             this.processButton = new System.Windows.Forms.Button();
-            this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.SuspendLayout();
             // 
             // openButton
             // 
             this.openButton.Location = new System.Drawing.Point(12, 88);
             this.openButton.Name = "openButton";
-            this.openButton.Size = new System.Drawing.Size(75, 23);
+            this.openButton.Size = new System.Drawing.Size(123, 23);
             this.openButton.TabIndex = 0;
-            this.openButton.Text = "Examinar";
+            this.openButton.Text = "Seleccionar carpeta";
             this.openButton.UseVisualStyleBackColor = true;
             this.openButton.Click += new System.EventHandler(this.openButton_Click);
             // 
@@ -56,10 +56,6 @@
             this.processButton.UseVisualStyleBackColor = true;
             this.processButton.Click += new System.EventHandler(this.processButton_Click);
             // 
-            // openFileDialog1
-            // 
-            this.openFileDialog1.FileName = "openFileDialog1";
-            // 
             // textBox1
             // 
             this.textBox1.Location = new System.Drawing.Point(12, 34);
@@ -67,7 +63,7 @@
             this.textBox1.ReadOnly = true;
             this.textBox1.Size = new System.Drawing.Size(266, 20);
             this.textBox1.TabIndex = 2;
-            this.textBox1.Text = "Iniciado. Sin trabajar.";
+            this.textBox1.Text = "Listo para usar";
             // 
             // label1
             // 
@@ -99,9 +95,9 @@
 
         private System.Windows.Forms.Button openButton;
         private System.Windows.Forms.Button processButton;
-        private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
     }
 }
 
