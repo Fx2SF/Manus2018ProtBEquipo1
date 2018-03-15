@@ -63,7 +63,7 @@
             this.textBox1.ReadOnly = true;
             this.textBox1.Size = new System.Drawing.Size(266, 20);
             this.textBox1.TabIndex = 2;
-            this.textBox1.Text = "Listo para usar";
+            this.textBox1.Text = "Listo para usar.";
             // 
             // label1
             // 
