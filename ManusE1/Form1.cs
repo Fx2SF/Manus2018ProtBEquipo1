@@ -23,7 +23,7 @@ namespace ManusE1
 
             //Botón examina carpeta que contiene lote de cheques
             private void openButton_Click(object sender, EventArgs e) {
-                // Consigo path de imagen 
+                // Consigo path directorio de lote cheques
                 folderBrowserDialog1.RootFolder = Environment.SpecialFolder.Desktop;
 
                 if (folderBrowserDialog1.ShowDialog() == DialogResult.OK) {
