@@ -69,14 +69,17 @@ namespace ManusE1
                 string resultingTxtDirectory = string.Concat(workingDirectory, "\\Archivos de texto resultado");
                 CreateTXT(resultingTxtDirectory, outcomeTxt);
 
-                //Creo rectángulos de recortes que interesan para procesar
-                Rectangle z1 = new Rectangle(100, 100, 100, 100);
-                Rectangle z2 = new Rectangle(100, 100, 100, 100);
-                Rectangle z3 = new Rectangle(100, 100, 100, 100);
+                //Creo array de campos que interesan procesar del cheque
+                string[] cropFields = { "Número de cheque: ", "Monto: ", "Lugar de pago: " };
+                //Creo rectángulos de recortes de los campos a procesar
+                Rectangle z1 = new Rectangle(40, 140, 200, 60); //zona de número de cheque
+                Rectangle z2 = new Rectangle(1040, 10, 310, 100); //zona de monto
+                Rectangle z3 = new Rectangle(180, 150, 710, 30); //zona de lugar de pago
                 Rectangle[] cropZones = new Rectangle[] { z1, z2, z3 };
-                //Proceso cada recorte de imagen original 
+                //Proceso cada recorte
                 var imageFactory = new ImageFactory(false);
                 var croppedImg = imageFactory.Load(check);
+                int cropNumber = 0;
                 foreach (Rectangle z in cropZones) {
                     //Hago recorte para procesar
                     croppedImg.Crop(z);
@@ -85,7 +88,8 @@ namespace ManusE1
                     croppedImg.Save(string.Concat(workingDirectory, "\\ManusE1_temporal\\current_crop.png"));
 
                     //Proceso recorte
-                    processSingleCrop(workingDirectory + "\\ManusE1_temporal\\current_crop.png", outcomeTxt);
+                    processSingleCrop(workingDirectory + "\\ManusE1_temporal\\current_crop.png", workingDirectory + "\\Archivos de texto resultado\\" + outcomeTxt +".txt", cropFields[cropNumber]);
+                    cropNumber += 1;
 
                     //Elimino archivo de recorte creado luego de haberlo procesado
                     File.Delete(string.Concat(workingDirectory, "\\ManusE1_temporal\\current_crop.png"));
@@ -93,14 +97,14 @@ namespace ManusE1
                 croppedImg.Dispose();
             }
 
-            public void processSingleCrop(string cropImg, string txtFile) {
+            public void processSingleCrop(string cropImg, string txtFile, string cropField) {
                 //Pido a la API Vision
                 var image = Google.Cloud.Vision.V1.Image.FromFile(cropImg);
                 var response = client.DetectText(image);
 
                 //Escribo lo devuelto por Vision 
-                string text = response.ElementAt(0).Description;
-                AppendText2File(txtFile, text);
+                string OCRtext = response.ElementAt(0).Description;
+                AppendText2File(txtFile, cropField + OCRtext);
             }
 
             public void CreateTXT(string directory, string fileName) {
@@ -111,7 +115,7 @@ namespace ManusE1
             }
 
             public void AppendText2File(string txtFilePath, string text) {
-                StreamWriter file = new StreamWriter(txtFilePath);
+                StreamWriter file = File.AppendText(txtFilePath);
                 file.WriteLine(text);
                 file.Dispose();
             }
