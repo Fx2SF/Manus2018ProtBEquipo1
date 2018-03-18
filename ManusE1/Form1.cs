@@ -16,6 +16,8 @@ namespace ManusE1
 
         //Creo instancia de cliente API
         ImageAnnotatorClient client = ImageAnnotatorClient.Create();
+        ImageContext ic = new ImageContext();
+
         public Form1()
         {
             InitializeComponent();
@@ -25,7 +27,6 @@ namespace ManusE1
             private void openButton_Click(object sender, EventArgs e) {
                 // Consigo path directorio de lote cheques
                 folderBrowserDialog1.RootFolder = Environment.SpecialFolder.Desktop;
-
                 if (folderBrowserDialog1.ShowDialog() == DialogResult.OK) {
                     workingDirectory = folderBrowserDialog1.SelectedPath; 
                 }
@@ -39,6 +40,8 @@ namespace ManusE1
 
             //Botón procesa lote
             private void processButton_Click(object sender, EventArgs e) {
+                //Seteo español como contexto de la imagen
+                ic.LanguageHints.Add("es");
                 //Creo array de todos los .tif que existen en la carpeta que contiene imágenes a procesar
                 string[] checkFiles = Directory.GetFiles(workingDirectory, "*.tif", SearchOption.TopDirectoryOnly);
                 int totalFiles = checkFiles.Length;
@@ -70,41 +73,54 @@ namespace ManusE1
                 CreateTXT(resultingTxtDirectory, outcomeTxt);
 
                 //Creo array de campos que interesan procesar del cheque
-                string[] cropFields = { "Número de cheque: ", "Monto: ", "Lugar de pago: " };
+                string[] cropFields = { "Serie: ", "Número de cheque: ", "Monto: ", "Monto en letras: ", "Lugar de pago: ", 
+                                       "Fecha: ", "Beneficiario: ", "Número de cuenta: ", "Titular de la cuenta: ", "Código de cheque: " };
                 //Creo rectángulos de recortes de los campos a procesar
-                Rectangle z1 = new Rectangle(40, 140, 200, 60); //zona de número de cheque
-                Rectangle z2 = new Rectangle(1040, 10, 310, 100); //zona de monto
-                Rectangle z3 = new Rectangle(180, 150, 710, 30); //zona de lugar de pago
-                Rectangle[] cropZones = new Rectangle[] { z1, z2, z3 };
+                Rectangle z1 = new Rectangle(50, 80, 60, 50); //zona de serie
+                Rectangle z2 = new Rectangle(140, 80, 140, 50); //zona de número de cheque
+                Rectangle z3 = new Rectangle(1040, 10, 310, 100); //zona de monto
+                Rectangle z4 = new Rectangle(200, 240, 1170, 70); //zona de monto en letras
+                Rectangle z5 = new Rectangle(180, 150, 710, 30); //zona de lugar de pago
+                Rectangle z6 = new Rectangle(680, 165, 690, 45); //zona de fecha
+                Rectangle z7 = new Rectangle(195, 180, 495, 245); //zona de beneficiario
+                Rectangle z8 = new Rectangle(50, 380, 250, 45); //zona de número cuenta
+                Rectangle z9 = new Rectangle(50, 425, 250, 450); //zona de titular de la cuenta
+                Rectangle z10 = new Rectangle(70, 490, 810, 110); //zona de código cheque
+                Rectangle[] cropZones = new Rectangle[] { z1, z2, z3, z4, z5, z6, z7, z8, z9, z10 };
                 //Proceso cada recorte
-                var imageFactory = new ImageFactory(false);
-                var croppedImg = imageFactory.Load(check);
                 int cropNumber = 0;
                 foreach (Rectangle z in cropZones) {
                     //Hago recorte para procesar
+                    var imageFactory = new ImageFactory(false);
+                    var croppedImg = imageFactory.Load(check);
                     croppedImg.Crop(z);
                     //Guardo archivo con recorte en formanto png
-                    croppedImg.Format(new PngFormat { Quality = 10 });
+                    croppedImg.Format(new PngFormat { Quality = 100 });
                     croppedImg.Save(string.Concat(workingDirectory, "\\ManusE1_temporal\\current_crop.png"));
 
                     //Proceso recorte
                     processSingleCrop(workingDirectory + "\\ManusE1_temporal\\current_crop.png", workingDirectory + "\\Archivos de texto resultado\\" + outcomeTxt +".txt", cropFields[cropNumber]);
                     cropNumber += 1;
 
-                    //Elimino archivo de recorte creado luego de haberlo procesado
+                    //Elimino recorte creado luego de haberlo procesado
+                    croppedImg.Dispose();
                     File.Delete(string.Concat(workingDirectory, "\\ManusE1_temporal\\current_crop.png"));
                 }
-                croppedImg.Dispose();
             }
 
             public void processSingleCrop(string cropImg, string txtFile, string cropField) {
                 //Pido a la API Vision
                 var image = Google.Cloud.Vision.V1.Image.FromFile(cropImg);
-                var response = client.DetectText(image);
-
-                //Escribo lo devuelto por Vision 
-                string OCRtext = response.ElementAt(0).Description;
-                AppendText2File(txtFile, cropField + OCRtext);
+                var response = client.DetectText(image, ic);
+                try { 
+                    //Escribo lo devuelto por Vision 
+                    string OCRtext = response.ElementAt(0).Description;
+                    AppendText2File(txtFile, cropField + OCRtext);
+                }
+                //Si ElementAt(0) = null porque Vision no devolvió texto
+                catch (ArgumentOutOfRangeException) {
+                    AppendText2File(txtFile, cropField + "No se pudo leer el campo o está vacío");
+                }
             }
 
             public void CreateTXT(string directory, string fileName) {
