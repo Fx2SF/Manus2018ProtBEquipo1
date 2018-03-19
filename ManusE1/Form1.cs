@@ -82,9 +82,9 @@ namespace ManusE1
                 Rectangle z4 = new Rectangle(200, 240, 1170, 70); //zona de monto en letras
                 Rectangle z5 = new Rectangle(180, 150, 710, 30); //zona de lugar de pago
                 Rectangle z6 = new Rectangle(680, 165, 690, 45); //zona de fecha
-                Rectangle z7 = new Rectangle(195, 180, 495, 245); //zona de beneficiario
+                Rectangle z7 = new Rectangle(195, 180, 70, 245); //zona de beneficiario
                 Rectangle z8 = new Rectangle(50, 380, 250, 45); //zona de número cuenta
-                Rectangle z9 = new Rectangle(50, 425, 250, 450); //zona de titular de la cuenta
+                Rectangle z9 = new Rectangle(50, 425, 450, 45); //zona de titular de la cuenta
                 Rectangle z10 = new Rectangle(70, 490, 810, 110); //zona de código cheque
                 Rectangle[] cropZones = new Rectangle[] { z1, z2, z3, z4, z5, z6, z7, z8, z9, z10 };
                 //Proceso cada recorte
