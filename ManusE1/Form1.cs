@@ -79,10 +79,10 @@ namespace ManusE1
                 Rectangle z1 = new Rectangle(50, 80, 60, 50); //zona de serie
                 Rectangle z2 = new Rectangle(140, 80, 140, 50); //zona de número de cheque
                 Rectangle z3 = new Rectangle(1040, 10, 310, 100); //zona de monto
-                Rectangle z4 = new Rectangle(200, 240, 1170, 70); //zona de monto en letras
+                Rectangle z4 = new Rectangle(195, 240, 1170, 70); //zona de monto en letras
                 Rectangle z5 = new Rectangle(180, 150, 710, 30); //zona de lugar de pago
                 Rectangle z6 = new Rectangle(680, 165, 690, 45); //zona de fecha
-                Rectangle z7 = new Rectangle(195, 180, 70, 500); //zona de beneficiario
+                Rectangle z7 = new Rectangle(195, 180, 500, 70); //zona de beneficiario
                 Rectangle z8 = new Rectangle(50, 380, 250, 45); //zona de número cuenta
                 Rectangle z9 = new Rectangle(50, 425, 450, 45); //zona de titular de la cuenta
                 Rectangle z10 = new Rectangle(70, 490, 810, 110); //zona de código cheque
