@@ -13,7 +13,6 @@ namespace ManusE1
     public partial class Form1 : Form
     {
         string workingDirectory;
-        enum checkType {banco_comercial, bbva};
 
         //Creo instancia de cliente API
         ImageAnnotatorClient client = ImageAnnotatorClient.Create();
