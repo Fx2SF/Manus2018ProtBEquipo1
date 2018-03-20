@@ -13,6 +13,7 @@ namespace ManusE1
     public partial class Form1 : Form
     {
         string workingDirectory;
+        enum checkType {banco_comercial, bbva};
 
         //Creo instancia de cliente API
         ImageAnnotatorClient client = ImageAnnotatorClient.Create();
@@ -43,7 +44,7 @@ namespace ManusE1
                 //Seteo español como contexto de la imagen
                 ic.LanguageHints.Add("es");
                 //Creo array de todos los .tif que existen en la carpeta que contiene imágenes a procesar
-                string[] checkFiles = Directory.GetFiles(workingDirectory, "*.tif", SearchOption.TopDirectoryOnly);
+                string[] checkFiles = Directory.GetFiles(workingDirectory, "*.*", SearchOption.TopDirectoryOnly);
                 int totalFiles = checkFiles.Length;
                 if (totalFiles == 0) {
                     textBox1.Text = "La carpeta seleccionada no contiene cheques.";
@@ -69,23 +70,48 @@ namespace ManusE1
 
             public void processSingleCheck(string check, string outcomeTxt) {
                 //Creo archivo txt 
+                string bank;
                 string resultingTxtDirectory = string.Concat(workingDirectory, "\\Archivos de texto resultado");
                 CreateTXT(resultingTxtDirectory, outcomeTxt);
 
-                //Creo array de campos que interesan procesar del cheque
+                //Creo array de campos que interesan procesar del cheque 
                 string[] cropFields = { "Serie: ", "Número de cheque: ", "Monto: ", "Monto en letras: ", "Lugar de pago: ", 
                                        "Fecha: ", "Beneficiario: ", "Número de cuenta: ", "Titular de la cuenta: ", "Código de cheque: " };
-                //Creo rectángulos de recortes de los campos a procesar
-                Rectangle z1 = new Rectangle(50, 80, 60, 50); //zona de serie
-                Rectangle z2 = new Rectangle(140, 80, 140, 50); //zona de número de cheque
-                Rectangle z3 = new Rectangle(1040, 10, 310, 100); //zona de monto
-                Rectangle z4 = new Rectangle(195, 240, 1170, 70); //zona de monto en letras
-                Rectangle z5 = new Rectangle(180, 150, 710, 30); //zona de lugar de pago
-                Rectangle z6 = new Rectangle(680, 165, 690, 45); //zona de fecha
-                Rectangle z7 = new Rectangle(195, 180, 500, 70); //zona de beneficiario
-                Rectangle z8 = new Rectangle(50, 380, 250, 45); //zona de número cuenta
-                Rectangle z9 = new Rectangle(50, 425, 450, 45); //zona de titular de la cuenta
-                Rectangle z10 = new Rectangle(70, 490, 810, 110); //zona de código cheque
+
+                Rectangle nr, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10;
+                nr = new Rectangle(0, 0, 0, 0);
+                z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = z10 = nr;
+                
+                if (detectCheckType(check) == 1) { // Cheque de Banco Comercial
+                    bank = "Banco Comercial";
+                    AppendText2File(workingDirectory + "\\Archivos de texto resultado\\" + outcomeTxt + ".txt", "Cheque de " + bank);
+                    //Creo rectángulos de recortes de los campos a procesar
+                    z1 = new Rectangle(50, 80, 60, 50); //zona de serie
+                    z2 = new Rectangle(140, 80, 140, 50); //zona de número de cheque
+                    z3 = new Rectangle(1040, 10, 310, 100); //zona de monto
+                    z4 = new Rectangle(195, 240, 1170, 70); //zona de monto en letras
+                    z5 = new Rectangle(180, 150, 710, 30); //zona de lugar de pago
+                    z6 = new Rectangle(680, 165, 690, 45); //zona de fecha
+                    z7 = new Rectangle(195, 180, 500, 70); //zona de beneficiario
+                    z8 = new Rectangle(50, 380, 250, 45); //zona de número cuenta
+                    z9 = new Rectangle(50, 425, 450, 45); //zona de titular de la cuenta
+                    z10 = new Rectangle(70, 490, 810, 110); //zona de código de cheque
+                }
+                else if (detectCheckType(check) == 2) { // Cheque de BBVA 
+                    bank = "BBVA";
+                    AppendText2File(workingDirectory + "\\Archivos de texto resultado\\" + outcomeTxt + ".txt", "Cheque de " + bank);
+                    z1 = new Rectangle(50, 20, 28, 18); //zona de serie
+                    z2 = new Rectangle(80, 20, 65, 23); //zona de número de cheque
+                    z3 = new Rectangle(480, 15, 215, 36); //zona de monto
+                    z4 = new Rectangle(130, 115, 555, 34); //zona de monto en letras
+                    z5 = new Rectangle(140, 45, 410, 21); //zona de lugar de pago
+                    z6 = new Rectangle(540, 65, 150, 28); //zona de fecha
+                    z7 = new Rectangle(140, 90, 427, 25); //zona de beneficiario
+                    z8 = new Rectangle(30, 185, 177, 22); //zona de número cuenta
+                    z9 = new Rectangle(30, 202, 268, 22); //zona de titular de la cuenta
+                    z10 = new Rectangle(35, 250, 405, 47); //zona de código de cheque
+                }
+
                 Rectangle[] cropZones = new Rectangle[] { z1, z2, z3, z4, z5, z6, z7, z8, z9, z10 };
                 //Proceso cada recorte
                 int cropNumber = 0;
@@ -106,6 +132,48 @@ namespace ManusE1
                     croppedImg.Dispose();
                     File.Delete(string.Concat(workingDirectory, "\\ManusE1_temporal\\current_crop.png"));
                 }
+            }
+
+            public int detectCheckType(string check) { // Código 1: Banco Comercial, Código 2: BBVA
+                System.Drawing.Image img = System.Drawing.Image.FromFile(check);
+                //Recorto logo banco
+                var imageFactory = new ImageFactory(false);
+                var croppedImg = imageFactory.Load(check);
+                int x, y, width, height;
+                x = Convert.ToInt32(img.Width * 0.33);
+                y = 0;
+                width = Convert.ToInt32(img.Width * 0.33);
+                height = Convert.ToInt32(img.Height * 0.25);
+                Rectangle logoZone = new Rectangle(x, y, width, height);
+                croppedImg.Crop(logoZone);
+                
+                //Guardo archivo con recorte en formanto png
+                croppedImg.Format(new PngFormat { Quality = 100 });
+                string logoImg = string.Concat(workingDirectory, "\\ManusE1_temporal\\logo.png");
+                croppedImg.Save(logoImg);
+
+                //Proceso logo
+                try {
+                    //Evalúo lo devuelto por Vision
+                    var image = Google.Cloud.Vision.V1.Image.FromFile(logoImg);
+                    var response = client.DetectText(image, ic);
+                    string OCRtext = response.ElementAt(0).Description;
+
+                    //Elimino recorte creado luego de haberlo procesado
+                    croppedImg.Dispose();
+                    File.Delete(string.Concat(workingDirectory, "\\ManusE1_temporal\\logo.png"));
+
+                    if (OCRtext.Contains("MER")) {
+                        return 1;
+                    } else if (OCRtext.Contains("BBVA")) {
+                        return 2;
+                    }
+                }
+                catch (ArgumentOutOfRangeException) {
+                    //Si ElementAt(0) = null porque Vision no devolvió texto, asumo que es cheque de Banco Comercial por mayor probabilidad
+                    return 1;
+                }
+                return 0; //Nunca devolverá este valor, pero el compilador lo demandaba
             }
 
             public void processSingleCrop(string cropImg, string txtFile, string cropField) {
